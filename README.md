@@ -5,6 +5,18 @@ Utilises https://neo4j.com/ you will need to download Neo4J Desktop to create a 
 - https://towardsdatascience.com/getting-started-with-neo4j-in-10-minutes-94788d99cc2b
 - Cypher Cheatsheet for Neo4j for https://neo4j.com/docs/cypher-refcard/current/
 
+Couple useful Chypers
+
+    //Delete all
+    MATCH (n)
+    DETACH DELETE n
+    
+    //Find all
+    Match (n)-[r]-(b)
+    Return n, r, b
+    
+Notice the Match command is directional. so ()-[]-() is all directions ()-[]->() is towards target etc.
+
 https://github.com/DotNet4Neo4j/Neo4jClient is used as C# wrapper for Neo4j. The wiki is slightly out of date. I have found that when writing a Cypher through the wrapper you can do `.Query.DebugQueryText` and it will output a string of exactly what the Cypher would look like (including resolved parameters) so you can check that against the official neo4j cypher documenation to see where you went wrong.
 - https://github.com/DotNet4Neo4j/Neo4jClient/wiki
 - 
