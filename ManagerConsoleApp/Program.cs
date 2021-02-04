@@ -112,10 +112,6 @@ namespace ManagerConsoleApp
 
                 if (askForAnswer)
                 {
-                    DisplayAcceptableAnswers(findNextNodeResult.NextNodes.SelectMany(n => n.AcceptableAnswers));
-
-                    var userInput = Console.ReadLine();
-
                     var choiceType = ChoiceType.None;
                     if (nextNode is UserPath userPath)
                     {
@@ -126,14 +122,18 @@ namespace ManagerConsoleApp
                         choiceType = sysPath.ChoiceType;
                     }
 
+                    var userInput = AskForUserInput(findNextNodeResult.NextNodes.SelectMany(n => n.AcceptableAnswers), choiceType);
+
                     switch (choiceType)
                     {
+                        // Text answers always have a single path to next node
                         case ChoiceType.None:
                             {
                                 writeService.SaveUserTextAnswer(employeeJourney, userInput, nextNode).Wait();
                                 nextNode = findNextNodeResult.NextNodes.Single().Node;
                                 break;
                             }
+                        // Multiple routes
                         case ChoiceType.Range:
                             {
                                 var intAnswer = Convert.ToInt32(userInput);
@@ -142,6 +142,7 @@ namespace ManagerConsoleApp
                                 nextNode = findNextNodeResult.NextNodes.Single(n => n.AcceptableAnswers.Contains(intAnswer)).Node;
                                 break;
                             }
+                        // Two routes
                         case ChoiceType.Binary:
                             {
                                 var intAnswer = Convert.ToInt32(userInput);
@@ -157,6 +158,7 @@ namespace ManagerConsoleApp
                 }
                 else
                 {
+                    // No input needed so route has single path (e.g. Wait 5 days)
                     nextNode = findNextNodeResult.NextNodes.Single().Node;
                 }
 
@@ -164,11 +166,27 @@ namespace ManagerConsoleApp
             }
         }
 
-        private static void DisplayAcceptableAnswers(IEnumerable<int> options)
+        private static string AskForUserInput(IEnumerable<int> options, ChoiceType choiceType)
+        {
+            DisplayAcceptableAnswers(options, choiceType);
+
+            return Console.ReadLine();
+        }
+
+        private static void DisplayAcceptableAnswers(IEnumerable<int> options, ChoiceType choiceType)
         {
             if (options != null && options.Any())
             {
-                Console.WriteLine($"Input your answer {options.Min()}-{options.Max()}");
+                if (choiceType == ChoiceType.Binary)
+                {
+                    Console.WriteLine("Input answer");
+                    Console.WriteLine("1 = true");
+                    Console.WriteLine("0 = false");
+                }
+                else
+                {
+                    Console.WriteLine($"Input your answer {options.Min()}-{options.Max()}");
+                }
             }
             else
             {

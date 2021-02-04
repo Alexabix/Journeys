@@ -36,6 +36,7 @@ namespace Graph
 
         private async Task SaveAnswer(UserJourney userJourney, UserAnswer answer, INode node)
         {
+            // Type checking so Cypher isn't generated with "INode" as the object name
             if (node is UserPath userPath)
             {
                 await RelateTwoNodesIfNotReleated(userJourney, answer, userPath);
@@ -99,6 +100,16 @@ namespace Graph
 
             //}
 
+            // Create relationship objects
+            var answerIsGreaterThan3 = new AnswerIs("GREATER_THAN_3", ChoiceType.Range, new List<int> { 4, 5 });
+            var answerIs1or2 = new AnswerIs("1_OR_2", ChoiceType.Range, new List<int> { 1, 2 });
+            var answerIs3 = new AnswerIs("3", ChoiceType.Range, new List<int> { 3 });
+            var answerIs4or5 = new AnswerIs("4_OR_5", ChoiceType.Range, new List<int> { 4, 5 });
+            var answerIsYes = new AnswerIs("YES", ChoiceType.Binary, new List<int> { 1 });
+            var answerIsNo = new AnswerIs("NO", ChoiceType.Binary, new List<int> { 0 });
+            var answerIsLessThanOrEqualTo3 = new AnswerIs("LESS_THAN_OR_EQUAL_TO_3", ChoiceType.Range, new List<int> { 1, 2, 3 });
+            var leadsTo = new LeadsTo();
+
             var introToKoreroJourney = await CreateJourney("Intro to Korero");
             var conversationSchedule = await CreateJourney("Conversation Scheduling");
             var catchUpSchedule = await CreateJourney("Induction Catch-up Scheduling");
@@ -117,16 +128,6 @@ namespace Graph
 
             // Above 3
             var hasUserCompletedIntro = await CreateSystemPath("Has the user completed the intro Journey already?", ChoiceType.Binary);
-
-            var answerIsGreaterThan3 = new AnswerIs("GREATER_THAN_3", ChoiceType.Range, new List<int> { 4, 5 });
-            var answerIs1or2 = new AnswerIs("1_OR_2", ChoiceType.Range, new List<int> { 1, 2 } );
-            var answerIs3 = new AnswerIs("3", ChoiceType.Range, new List<int> { 3 });
-            var answerIs4or5 = new AnswerIs("4_OR_5", ChoiceType.Range, new List<int> { 4, 5 });
-            var answerIsYes = new AnswerIs("YES", ChoiceType.Binary, new List<int> { 1 });
-            var answerIsNo = new AnswerIs("NO", ChoiceType.Binary, new List<int> { 0 });
-            var answerIsLessThanOrEqualTo3 = new AnswerIs("LESS_THAN_OR_EQUAL_TO_3", ChoiceType.Range, new List<int> { 1, 2, 3 });
-            var leadsTo = new LeadsTo();
-
             var wouldYouLikeToDiscuss = await CreateUserPath("Would you like to discuss this with manager?", ChoiceType.Binary);
             var tellUsWhy = await CreateUserPath("Please tell us why", ChoiceType.None);
 
@@ -297,7 +298,7 @@ namespace Graph
         {
             try
             {
-                // Because we create a unique Guid with each object this will duplicate using Id property
+                // Because we create a unique Guid with each object this will create duplicates if the Seed function is run multiple times
                 await graphClient.Cypher
                     .Merge($"(n:{typeof(T).Name} {{ id: $id }})")
                     .OnCreate()
@@ -321,12 +322,15 @@ namespace Graph
         {
             try
             {
+                // Temporary variable is a work around for the Cypher function not doing deep traversal when parsing expression queries
+                // I've reported it to the developers to be fixed
                 var sourceId = sourceNode.Id;
                 var targetId = targetNode.Id;
 
                 await graphClient.Cypher
                 .Match($"(source:{typeof(TSource).Name})")
                 .Match($"(target:{typeof(TTarget).Name})")
+                // Note that "source" "target" alias defined in Match query must match your variables below
                 .Where((TSource source) => source.Id == sourceId)
                 .AndWhere((TTarget target) => target.Id == targetId)
                 .Create($"(source)-[:{relationship.Name.ToUpper()} $relParams]->(target)")

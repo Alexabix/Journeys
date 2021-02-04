@@ -18,9 +18,14 @@ namespace Graph.DTO
             }
         }
 
-        public INode Node { get; set; }
+        public INode Node { get; private set; }
         public IEnumerable<int> AcceptableAnswers { get; set; } = new List<int>();
 
+        /// <summary>
+        /// Sets Node property to concrete type to correct name is used for writes/reads
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="type"></param>
         private void SetNode(JObject node, NodeType type)
         {
             switch (type)

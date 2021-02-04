@@ -19,6 +19,9 @@ namespace Graph.Relationships
         [JsonProperty(PropertyName = "choiceType")]
         public ChoiceType ChoiceType { get; set; }
 
+        /// <summary>
+        /// Defines the answers that have to be provided to traverse this route
+        /// </summary>
         [JsonProperty(PropertyName = "acceptableAnswers")]
         public IEnumerable<int> AcceptableAnswers { get; set; }
     }
