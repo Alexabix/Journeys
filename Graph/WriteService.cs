@@ -257,28 +257,29 @@ namespace Graph
         private async Task<Journey> CreateJourney(string descriptioin)
         {
             var journey = new Journey(descriptioin);
-            await AddIfNotExist(journey);
+            await AddIfNotExist(journey, PathLabel);
             return journey;
         }
 
+        const string PathLabel = "Path";
         private async Task<SystemPath> CreateSystemPath(string description, ChoiceType choiceType)
         {
             var systemPath = new SystemPath(description, choiceType);
-            await AddIfNotExist(systemPath);
+            await AddIfNotExist(systemPath, PathLabel);
             return systemPath;
         }
 
         private async Task<UserPath> CreateUserPath(string description, ChoiceType choiceType)
         {
             var userPath = new UserPath(description, choiceType);
-            await AddIfNotExist(userPath);
+            await AddIfNotExist(userPath, PathLabel);
             return userPath;
         }
 
         private async Task<SystemEvent> CreateSystemEvent(string description)
         {
             var systemEvent = new SystemEvent(description);
-            await AddIfNotExist(systemEvent);
+            await AddIfNotExist(systemEvent, PathLabel);
             return systemEvent;
         }
 
@@ -294,13 +295,19 @@ namespace Graph
         #endregion
 
         #region Perform Actions on DB
-        private async Task AddIfNotExist<T>(T node) where T : INode
+        private async Task AddIfNotExist<T>(T node, string additionalLabel = null) where T : INode
         {
             try
             {
                 // Because we create a unique Guid with each object this will create duplicates if the Seed function is run multiple times
+                // Creat multiple node lables (n:Name1:Name2)
+                var mergeStatement = $"(n:{typeof(T).Name} {{ id: $id }})";
+
+                if (!string.IsNullOrEmpty(additionalLabel))
+                    mergeStatement = $"(n:{typeof(T).Name}:{additionalLabel} {{ id: $id }})";
+
                 await graphClient.Cypher
-                    .Merge($"(n:{typeof(T).Name} {{ id: $id }})")
+                    .Merge(mergeStatement)
                     .OnCreate()
                     .Set("n = $node")
                     .WithParams(new
